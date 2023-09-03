@@ -153,3 +153,17 @@ class ImageProcessingBot(Bot):
             self.send_text(msg['chat']['id'], gratitude_response)
         else:
             self.send_text(msg['chat']['id'], self.default_response)
+
+
+class ObjectDetectionBot(Bot):
+    def handle_message(self, msg):
+        logger.info(f'Incoming message: {msg}')
+
+        if self.is_current_msg_photo(msg):
+            photo_path = self.download_user_photo(msg)
+
+            # TODO upload the photo to S3
+            # TODO send a request to the `yolo5` service for prediction
+            # TODO send results to the Telegram end-user
+
+            pass
