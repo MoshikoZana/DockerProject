@@ -86,7 +86,7 @@ def swear_words_github():
         return []
 
 
-class ImageProcessingBot(Bot):
+class ObjectDetectionBot(Bot):
     def __init__(self, token, telegram_chat_url=None):
         super().__init__(token, telegram_chat_url)
         self.swear_words_count = 0
@@ -154,16 +154,12 @@ class ImageProcessingBot(Bot):
         else:
             self.send_text(msg['chat']['id'], self.default_response)
 
+    #if self.is_current_msg_photo(msg):
+        photo_path = self.download_user_photo(msg)
 
-class ObjectDetectionBot(Bot):
-    def handle_message(self, msg):
-        logger.info(f'Incoming message: {msg}')
+        # TODO upload the photo to S3
+        # TODO send a request to the `yolo5` service for prediction
+        # TODO send results to the Telegram end-user
 
-        if self.is_current_msg_photo(msg):
-            photo_path = self.download_user_photo(msg)
 
-            # TODO upload the photo to S3
-            # TODO send a request to the `yolo5` service for prediction
-            # TODO send results to the Telegram end-user
 
-            pass

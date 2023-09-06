@@ -1,13 +1,13 @@
 import time
 from pathlib import Path
 from flask import Flask, request
-from yolov5 import run
+from detect import run
 import uuid
 import yaml
 from loguru import logger
 import os
 import boto3
-
+import pymongo
 
 images_bucket = os.environ['BUCKET_NAME']
 
@@ -29,12 +29,9 @@ def predict():
     img_name = request.args.get('imgName')
 
     s3 = boto3.client('s3')
-    photos_folder = "/home/moshiko/PycharmProjects/DockerProject/polybot/photos"
-
-    local_img_path = os.path.join(photos_folder, img_name)
+    local_img_path = f'static/data{prediction_id}/{img_name}'
     s3.download_file(images_bucket, img_name, local_img_path)
-
-    original_img_path = ...
+    original_img_path = local_img_path
 
     logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
 
@@ -55,9 +52,9 @@ def predict():
 
     predicted_img_path = Path(f'static/data/{prediction_id}/{original_img_path}')
 
-    s3_predicted_img_path = f"predicted/{prediction_id}/{original_img_path}"
+    s3_dest_key = f'predicted-images/{prediction_id}/{img_name}'
 
-    s3.upload_file(predicted_img_path, images_bucket, s3_predicted_img_path)
+    s3.upload_file(str(predicted_img_path), images_bucket, s3_dest_key)
 
     # Parse prediction labels and create a summary
     pred_summary_path = Path(f'static/data/{prediction_id}/labels/{original_img_path.split(".")[0]}.txt')
@@ -83,7 +80,13 @@ def predict():
             'time': time.time()
         }
 
-        # TODO store the prediction_summary in MongoDB
+        cluster = os.environ['CLUSTERSTRING']
+        mongo_client = pymongo.MongoClient(cluster)
+
+        db = mongo_client['MoshikoDB']
+        collection = db['MoshikoCollection']
+
+        result = collection.insert_one(prediction_summary)
 
         return prediction_summary
     else:
