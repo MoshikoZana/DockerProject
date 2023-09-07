@@ -6,6 +6,7 @@ from telebot.types import InputFile
 from polybot.img_proc import Img
 import requests
 import boto3
+import json
 
 
 # from botcore.exceptions import ClientError
@@ -165,11 +166,6 @@ class ObjectDetectionBot(Bot):
         self.s3_client = boto3.client('s3')
         self.default_response = "Sorry, I didn't understand that. Type /help for available commands."
 
-    def yolo5_request(self, s3_photo_path):
-        yolo5_api = "http://localhost:8081/predict"
-        response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
-        return response.json()
-
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
@@ -178,14 +174,38 @@ class ObjectDetectionBot(Bot):
             s3_bucket = "moshikosbucket"
             img_name = f'tg-photos/{photo_download}'
             self.s3_client.upload_file(photo_download, s3_bucket, img_name)
-            response = self.yolo5_request(img_name)
-            filename = photo_download.split('/')[:-1]
-            pred_img_name = f'predicted_{filename}'
-            s3_pred_path = '/'.join(img_name.split('/')[:-1]) + f'/{pred_img_name}'
-            local_path = 'photos'
-            os.makedirs(local_path, exist_ok=True)
-            self.s3_client.download_file(s3_bucket, s3_pred_path, local_path)
-            self.send_photo(msg['chat']['id'], (local_path + pred_img_name))
+            yolo_summary = self.yolo5_request(img_name)  # Get YOLOv5 summary
+            self.send_summary_to_user(msg['chat']['id'], yolo_summary)  # Send the summary to the user
+
+    def send_summary_to_user(self, chat_id, summary):
+        # Format the YOLOv5 summary as a string
+        summary_str = json.dumps(summary, indent=4)
+
+        # Send the summary to the user
+        self.send_text(chat_id, summary_str)
+
+    def yolo5_request(self, s3_photo_path):
+        yolo5_api = "http://localhost:8081/predict"
+        response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
+
+        if response.status_code == 200:
+            try:
+                return response.json()  # Attempt to parse the JSON response
+            except json.JSONDecodeError as e:
+                logger.error(f'Failed to decode JSON response: {e}')
+                return {"error": "Invalid JSON response from YOLOv5 API"}
+
+        else:
+            logger.error(f'Error response from YOLOv5 API: {response.status_code} - {response.text}')
+            return {"error": f"Error response from YOLOv5 API: {response.status_code}"}
+
+
+        # filename = photo_download.split('/')[:-1]
+        # pred_img_name = f'predicted_{filename}'
+        # s3_pred_path = '/'.join(img_name.split('/')[:-1]) + f'/predicted_{pred_img_name}'
+        # local_path = 'photos'
+        # os.makedirs(local_path, exist_ok=True)
+        # self.s3_client.download_file(s3_bucket, s3_pred_path, local_path)
 
         # TODO upload the photo to S3
         # TODO send a request to the `yolo5` service for prediction
