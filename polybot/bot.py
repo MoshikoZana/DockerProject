@@ -160,16 +160,17 @@ class ImageProcessingBot(Bot):
 
 
 class ObjectDetectionBot(Bot):
-    def __int__(self, token, telegram_chat_url):
+    def __init__(self, token, telegram_chat_url):
         super().__init__(token, telegram_chat_url)
         self.s3_client = boto3.client('s3')
+        self.default_response = "Sorry, I didn't understand that. Type /help for available commands."
 
     def yolo5_request(self, s3_photo_path):
         yolo5_api = "http://localhost:8081/predict"
-        yolo_response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
-        return yolo_response.json()
+        response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
+        return response.json()
 
-    def handle_message(self, msg, command):
+    def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
         if self.is_current_msg_photo(msg):
@@ -181,6 +182,10 @@ class ObjectDetectionBot(Bot):
             filename = photo_download.split('/')[:-1]
             pred_img_name = f'predicted_{filename}'
             s3_pred_path = '/'.join(img_name.split('/')[:-1]) + f'/{pred_img_name}'
+            local_path = 'photos'
+            os.makedirs(local_path, exist_ok=True)
+            self.s3_client.download_file(s3_bucket, s3_pred_path, local_path)
+            self.send_photo(msg['chat']['id'], (local_path + pred_img_name))
 
         # TODO upload the photo to S3
         # TODO send a request to the `yolo5` service for prediction
