@@ -182,7 +182,6 @@ class ObjectDetectionBot(Bot):
             pred_img_name = f'predicted_{filename}'
             s3_pred_path = '/'.join(img_name.split('/')[:-1]) + f'/{pred_img_name}'
 
-
         # TODO upload the photo to S3
         # TODO send a request to the `yolo5` service for prediction
         # TODO send results to the Telegram end-user
