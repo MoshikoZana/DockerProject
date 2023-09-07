@@ -5,6 +5,10 @@ import time
 from telebot.types import InputFile
 from polybot.img_proc import Img
 import requests
+import boto3
+
+
+# from botcore.exceptions import ClientError
 
 
 class Bot:
@@ -86,7 +90,7 @@ def swear_words_github():
         return []
 
 
-class ObjectDetectionBot(Bot):
+class ImageProcessingBot(Bot):
     def __init__(self, token, telegram_chat_url=None):
         super().__init__(token, telegram_chat_url)
         self.swear_words_count = 0
@@ -154,12 +158,31 @@ class ObjectDetectionBot(Bot):
         else:
             self.send_text(msg['chat']['id'], self.default_response)
 
-    #if self.is_current_msg_photo(msg):
-        photo_path = self.download_user_photo(msg)
+
+class ObjectDetectionBot(Bot):
+    def __int__(self, token, telegram_chat_url):
+        super().__init__(token, telegram_chat_url)
+        self.s3_client = boto3.client('s3')
+
+    def yolo5_request(self, s3_photo_path):
+        yolo5_api = "http://localhost:8081/predict"
+        yolo_response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
+        return yolo_response.json()
+
+    def handle_message(self, msg, command):
+        logger.info(f'Incoming message: {msg}')
+
+        if self.is_current_msg_photo(msg):
+            photo_download = self.download_user_photo(msg)
+            s3_bucket = "moshikosbucket"
+            img_name = f'tg-photos/{photo_download}'
+            self.s3_client.upload_file(photo_download, s3_bucket, img_name)
+            response = self.yolo5_request(img_name)
+            filename = photo_download.split('/')[:-1]
+            pred_img_name = f'predicted_{filename}'
+            s3_pred_path = '/'.join(img_name.split('/')[:-1]) + f'/{pred_img_name}'
+
 
         # TODO upload the photo to S3
         # TODO send a request to the `yolo5` service for prediction
         # TODO send results to the Telegram end-user
-
-
-
