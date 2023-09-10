@@ -166,6 +166,20 @@ class ObjectDetectionBot(Bot):
         self.s3_client = boto3.client('s3')
         self.default_response = "Sorry, I didn't understand that. Type /help for available commands."
 
+    def yolo5_request(self, s3_photo_path):
+        yolo5_api = "http://localhost:8081/predict"
+        response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
+
+        if response.status_code == 200:
+            try:
+                return response.json()  # Attempt to parse the JSON response
+            except json.JSONDecodeError as e:
+                logger.error(f'Failed to decode JSON response: {e}')
+                return {"error": "Invalid JSON response from YOLOv5 API"}
+        else:
+            logger.error(f'Error response from YOLOv5 API: {response.status_code} - {response.text}')
+            return {"error": f"Error response from YOLOv5 API: {response.status_code}"}
+
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
@@ -177,28 +191,15 @@ class ObjectDetectionBot(Bot):
             yolo_summary = self.yolo5_request(img_name)  # Get YOLOv5 summary
             self.send_summary_to_user(msg['chat']['id'], yolo_summary)  # Send the summary to the user
 
-    def send_summary_to_user(self, chat_id, summary):
-        # Format the YOLOv5 summary as a string
-        summary_str = json.dumps(summary, indent=4)
-
-        # Send the summary to the user
-        self.send_text(chat_id, summary_str)
-
-    def yolo5_request(self, s3_photo_path):
-        yolo5_api = "http://localhost:8081/predict"
-        response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
-
-        if response.status_code == 200:
-            try:
-                return response.json()  # Attempt to parse the JSON response
-            except json.JSONDecodeError as e:
-                logger.error(f'Failed to decode JSON response: {e}')
-                return {"error": "Invalid JSON response from YOLOv5 API"}
-
+    def send_summary_to_user(self, chat_id, yolo_summary):
+        if "labels" in yolo_summary:
+            labels = yolo_summary["labels"]
+            summary_str = "YOLOv5 Object Detection Results:\n"
+            for label in labels:
+                summary_str += f"Class: {label['class']}, Confidence: {label.get('confidence', 'N/A')}\n"
+            self.send_text(chat_id, summary_str)
         else:
-            logger.error(f'Error response from YOLOv5 API: {response.status_code} - {response.text}')
-            return {"error": f"Error response from YOLOv5 API: {response.status_code}"}
-
+            self.send_text(chat_id, "No objects detected in the image.")
 
         # filename = photo_download.split('/')[:-1]
         # pred_img_name = f'predicted_{filename}'
