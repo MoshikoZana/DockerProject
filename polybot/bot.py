@@ -152,8 +152,8 @@ class ObjectDetectionBot(Bot):
                 elif message.startswith('/help'):
                     help_response = (
                         "How to use Image Processing Bot: \nSimply upload a photo to me, and add your desired "
-                        "filter in the caption.\nSupported filters: Rotate, Blur, Contour, Salt n pepper, "
-                        "concat and segment.")
+                        "filter in the caption.\nSupported filters are Rotate, Blur, Contour, Salt n pepper, "
+                        "concat and segment. To use object detection, upload a photo without a caption.")
                     self.send_text(msg['chat']['id'], help_response)
                 else:
                     self.handle_non_command(msg, message)
@@ -194,24 +194,6 @@ class ObjectDetectionBot(Bot):
         else:
             self.send_text(chat_id, "No objects detected in the image.")
 
-    def handle_command(self, msg, command):
-        logger.info(f'Incoming message: {msg}')
-
-        if 'text' in msg:
-            message = msg['text'].lower()
-
-        if command.startwith('/start'):
-            start_response = "Hey there! Welcome to Image Processing Bot! For available commands type \"/help\""
-            self.send_text(msg['chat']['id'], start_response)
-
-        elif command.startwith('/help'):
-            help_response = ("How to use Image Processing Bot: \nSimply upload a photo to me, and add your desired "
-                             "filter in the caption.\nSupported filters: Rotate, Blur, Contour, Salt n pepper, "
-                             "concat and segment.")
-            self.send_text(msg['chat']['id'], help_response)
-        else:
-            self.send_text(msg['chat']['id'], self.default_response)
-
     def handle_non_command(self, msg, message):
         if message in self.swear_words:
             bot_response = self.swear_response[self.swear_words_count % len(self.swear_response)]
@@ -223,18 +205,7 @@ class ObjectDetectionBot(Bot):
             self.send_text(msg['chat']['id'], gratitude_response)
         else:
             self.send_text(msg['chat']['id'], self.default_response)
-# class ObjectDetectionBot(Bot):
-#     def __init__(self, token, telegram_chat_url):
-#         super().__init__(token, telegram_chat_url)
-#         self.s3_client = boto3.client('s3')
-#         self.swear_words_count = 0
-#         self.swear_words = swear_words_github()
-#         self.swear_response = [
-#             "Excuse me... who do you think I am that you're being filthy here? Stop it.",
-#             "Seriously? You're just going to continue to swear? I'm an image processing bot not a prostitute!",
-#             "(╯°□°)╯︵ ┻━┻ WHAT'S WRONG WITH YOU!"
-#         ]
-#         self.default_response = "Sorry, I didn't understand that. Type /help for available commands."
+
 #
 #         # TODO upload the photo to S3
 #         # TODO send a request to the `yolo5` service for prediction
