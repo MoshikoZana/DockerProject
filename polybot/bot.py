@@ -87,8 +87,6 @@ def swear_words_github():
     if response.status_code == 200:
         swear_words = [line.strip() for line in response.text.split('\n')]
         return swear_words
-    else:
-        return []
 
 
 class ObjectDetectionBot(Bot):
@@ -158,7 +156,7 @@ class ObjectDetectionBot(Bot):
                         "concat and segment.")
                     self.send_text(msg['chat']['id'], help_response)
                 else:
-                    self.send_text(msg['chat']['id'], self.default_response)
+                    self.handle_non_command(msg, message)
 
     def yolo5_request(self, s3_photo_path):
         yolo5_api = "http://localhost:8081/predict"
@@ -214,6 +212,17 @@ class ObjectDetectionBot(Bot):
         else:
             self.send_text(msg['chat']['id'], self.default_response)
 
+    def handle_non_command(self, msg, message):
+        if message in self.swear_words:
+            bot_response = self.swear_response[self.swear_words_count % len(self.swear_response)]
+            self.swear_words_count = (self.swear_words_count + 1) % len(self.swear_response)
+            self.send_text(msg['chat']['id'], bot_response)
+        elif 'thanks' in message or 'thank' in message:
+            gratitude_response = ("You're welcome! If you need any further assistance, try using the available "
+                                  "commands :)")
+            self.send_text(msg['chat']['id'], gratitude_response)
+        else:
+            self.send_text(msg['chat']['id'], self.default_response)
 # class ObjectDetectionBot(Bot):
 #     def __init__(self, token, telegram_chat_url):
 #         super().__init__(token, telegram_chat_url)
