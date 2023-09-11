@@ -44,7 +44,7 @@ def predict():
     logger.info(f'prediction id: {prediction_id}, path: \"{original_img_path}\" Download img completed')
 
     # Predicts the objects in the image
-    run(
+    result = run(
         weights='yolov5s.pt',
         data='data/coco128.yaml',
         source=original_img_path,
@@ -52,6 +52,22 @@ def predict():
         name=prediction_id,
         save_txt=True
     )
+
+    # detected_objects = result.get("labels", [])
+    # object_counts = {}
+    # custom_response = "The detected image contains: "
+    #
+    # for label in detected_objects:
+    #     object_class = label['class']
+    #     if object_class in object_counts:
+    #         object_counts[object_class] += 1
+    #     else:
+    #         object_counts[object_class] = 1
+    #
+    # for object_class, count in object_counts.items():
+    #     custom_response += f"{object_class}: {count}"
+    #
+    # custom_response = custom_response.rstrip(', ')
 
     logger.info(f'prediction: {prediction_id}, path: {original_img_path}. done')
 
