@@ -3,7 +3,7 @@ from flask import request
 import os
 from bot import Bot, QuoteBot
 from bot import ObjectDetectionBot
-from bot import ImageProcessingBot
+
 
 app = flask.Flask(__name__)
 

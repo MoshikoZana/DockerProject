@@ -12,7 +12,7 @@ import pymongo
 import json
 
 images_bucket = os.environ['BUCKET_NAME']
-
+mongo_string = os.environ['MONGOCLIENT']
 with open("data/coco128.yaml", "r") as stream:
     names = yaml.safe_load(stream)['names']
 
@@ -118,6 +118,13 @@ def predict():
         }
 
         json_data = json.dumps(prediction_summary)
+
+        client = pymongo.MongoClient(mongo_string)
+        db = client["MoshikoDB"]
+        collection = db["Yolo5"]
+        collection.insert_one(prediction_summary)
+
+        client.close()
 
         return json_data  # Return the JSON response to the client
     else:

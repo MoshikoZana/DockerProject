@@ -1,4 +1,13 @@
-version: '3.8'
+version: '3'
+
 services:
   yolo5:
-    image:
+    image: moshikodf
+    ports:
+      - "8081:8081"
+    environment:
+      - BUCKET_NAME='moshikosbucket'
+      - MONGOCLIENT='mongodb+srv://MoshikoDB:DNV61t3mVwfrrklB@cluster0.m6q6r3y.mongodb.net/?retryWrites=true&w=majority
+
+
+# TELEGRAM_TOKEN=/run/secrets/telegram_token_secret
