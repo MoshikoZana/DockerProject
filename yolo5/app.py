@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from detect import run
 import uuid
 import yaml
@@ -12,7 +12,9 @@ import pymongo
 import json
 
 images_bucket = os.environ['BUCKET_NAME']
-mongo_string = os.environ['MONGOCLIENT']
+mongo_user = os.environ['MONGOUSER']
+mongo_pass = os.environ['MONGOPASS']
+
 with open("data/coco128.yaml", "r") as stream:
     names = yaml.safe_load(stream)['names']
 
@@ -119,10 +121,18 @@ def predict():
 
         json_data = json.dumps(prediction_summary)
 
-        client = pymongo.MongoClient(mongo_string)
+        mongo_atlas = (f"mongodb+srv://{mongo_user}:{mongo_pass}@cluster0.m6q6r3y.mongodb.net/?retryWrites=true&w"
+                       f"=majority")
+        client = pymongo.MongoClient(mongo_atlas)
+
         db = client["MoshikoDB"]
         collection = db["Yolo5"]
-        collection.insert_one(prediction_summary)
+        result = collection.insert_one(prediction_summary)
+
+        if result.acknowledged:
+            print("Summary data has been successfully stored.")
+        else:
+            print("Failed to store summary data.")
 
         client.close()
 

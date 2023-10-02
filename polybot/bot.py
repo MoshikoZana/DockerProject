@@ -3,7 +3,7 @@ from loguru import logger
 import os
 import time
 from telebot.types import InputFile
-from polybot.img_proc import Img
+from img_proc import Img
 import requests
 import boto3
 import json
@@ -159,7 +159,7 @@ class ObjectDetectionBot(Bot):
                     self.handle_non_command(msg, message)
 
     def yolo5_request(self, s3_photo_path):
-        yolo5_api = "http://localhost:8081/predict"
+        yolo5_api = "http://yolo5:8081/predict"
         response = requests.post(f"{yolo5_api}?imgName={s3_photo_path}")
 
         if response.status_code == 200:
